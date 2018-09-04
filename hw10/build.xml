@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." xmlns:jacoco="antlib:org.jacoco.ant" default="ashu" name="hw10">
+    <property environment="env"/>
+    <property name="ECLIPSE_HOME" value="../../../../../eclipse/jee-oxygen/eclipse/"/>
+    <property name="junit.output.dir" value="${basedir}/test/reports/junit"/>
+	<property name="jacoco.output.dir" value="${basedir}/test/reports/coverage" />
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.8"/>
+    <property name="source" value="1.8"/>
+    <path id="hw10.classpath">
+        <pathelement location="bin"/>
+        <pathelement location="${env.HAMCREST_CORE}"/>
+        <pathelement location="${env.JUNIT}"/>
+        <pathelement location="${env.JACOCO}"/>
+    </path>
+	
+	<target name="ashu" depends="cleanall,init,build,Test,junitreport,jacocoreport"/>
+	
+	<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml">
+		        <classpath path="${env.JACOCO}"/>
+		    </taskdef>
+	
+    <target name="init">
+    	<mkdir dir="bin"/>
+    	<mkdir dir="test/bin"/>
+    	<mkdir dir="${junit.output.dir}" />
+    	<mkdir dir="${jacoco.output.dir}" />
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="test/src">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+	
+    <target name="clean">
+    	<delete dir="bin"/>
+    	<delete dir="test/bin"/>
+    	<delete dir="${junit.output.dir}" />
+    	<delete dir="${jacoco.output.dir}" />
+    </target>
+	
+    <target depends="clean" name="cleanall"/>
+	
+    <target depends="build-subprojects,build-project" name="build"/>
+    <target name="build-subprojects"/>
+	
+    <target depends="init" name="build-project">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <javac debug="true" debuglevel="${debuglevel}" destdir="bin" includeantruntime="false" source="${source}" target="${target}">
+            <src path="src"/>
+            <src path="test/src"/>
+            <classpath refid="hw10.classpath"/>
+        </javac>
+    	<javac debug="true" debuglevel="${debuglevel}" destdir="test/bin" includeantruntime="false" source="${source}" target="${target}">
+    	            <src path="test/src"/>
+    	            <classpath refid="hw10.classpath"/>
+    	        </javac>
+    </target>
+	
+    <target description="Build all projects which reference this project. Useful to propagate changes." name="build-refprojects"/>
+    <target description="copy Eclipse compiler jars to ant lib directory" name="init-eclipse-compiler">
+        <copy todir="${ant.library.dir}">
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </copy>
+        <unzip dest="${ant.library.dir}">
+            <patternset includes="jdtCompilerAdapter.jar"/>
+            <fileset dir="${ECLIPSE_HOME}/plugins" includes="org.eclipse.jdt.core_*.jar"/>
+        </unzip>
+    </target>
+	
+    <target description="compile project with Eclipse compiler" name="build-eclipse-compiler">
+        <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
+        <antcall target="build"/>
+    </target>
+   
+    <target name="Test">
+        <mkdir dir="${junit.output.dir}"/>
+    	<jacoco:coverage destfile="${jacoco.output.dir}/jacoco.exec">
+        <junit fork="yes" printsummary="withOutAndErr">
+            <formatter type="xml"/>
+            <test name="edu.umb.cs.cs680.hw10.Test" todir="${junit.output.dir}"/>
+            <classpath refid="hw10.classpath"/>
+        </junit>
+    	</jacoco:coverage>
+    </target>
+    
+    <target name="junitreport">
+        <junitreport todir="${junit.output.dir}">
+            <fileset dir="${junit.output.dir}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${junit.output.dir}"/>
+        </junitreport>
+    </target>
+	
+	<target name="jacocoreport">
+			<jacoco:report>
+				<executiondata>
+					<file file="${jacoco.output.dir}/jacoco.exec" />
+				</executiondata>
+
+				<structure name="JaCoCo Reports">
+					<classfiles>
+						<fileset dir="bin" />
+					</classfiles>
+					<sourcefiles encoding="UTF-8">
+						<fileset dir="src" />
+					</sourcefiles>
+				</structure>
+				<html destdir="${jacoco.output.dir}" />
+				<csv destfile="${jacoco.output.dir}/report.csv" />
+			</jacoco:report>
+		</target>
+</project>
